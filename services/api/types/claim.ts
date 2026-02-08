@@ -1,6 +1,19 @@
-import { AgentStatus, KycDetails, StockDetails, UserDetails, VendorDetails } from "./order";
+import {
+    AgentStatus,
+    KycDetails,
+    StockDetails,
+    UserDetails,
+    VendorDetails,
+} from "./order";
 
-export type ClaimStatus="pending"|"in-progress"|"cancelled"|"verified"|"approved"|"rejected"|"completed"
+export type ClaimStatus =
+  | "pending"
+  | "in-progress"
+  | "cancelled"
+  | "verified"
+  | "approved"
+  | "rejected"
+  | "completed";
 export interface Claim {
   _id: string;
   claimId: string;
@@ -81,10 +94,17 @@ export interface SalesAgentAttachedDefectiveImgs {
   treadDept4?: string;
 }
 
+export interface GroupedClaimQuantity {
+  otd: number;
+  rtd: number;
+  quantity: number;
+}
+
 export interface UpdateClaimStatusPayload {
   status?: string;
   salesAgentAttchedOfficialImgs?: SalesAgentAttachedOfficialImgs;
   salesAgentAttchedDefectiveImgs?: SalesAgentAttachedDefectiveImgs;
   checkingRemarks?: string;
   balanceThreshold?: number;
+  groupedClaimQuantity?: GroupedClaimQuantity[];
 }

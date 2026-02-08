@@ -1,6 +1,6 @@
-import { Device } from '@/newLib/device';
-import { moderateScale } from '@/newLib/responsive';
-import { initialWindowMetrics } from 'react-native-safe-area-context';
+import { Device } from "@/newLib/device";
+import { moderateScale } from "@/newLib/responsive";
+import { initialWindowMetrics } from "react-native-safe-area-context";
 
 const top = initialWindowMetrics?.insets.top ?? moderateScale(20);
 const bottom = Device.isAndroid
@@ -21,8 +21,9 @@ export const SPACING = {
   space11: moderateScale(48),
   space12: moderateScale(64),
   header: moderateScale(56) + top,
+  contentWidth: Device.width - moderateScale(32),
   screenPadding: moderateScale(16),
-  gap: moderateScale(8), 
+  gap: moderateScale(8),
   screenBottom: bottom,
   screenTop: top,
   screenWithoutPadding: Device.width - moderateScale(32),

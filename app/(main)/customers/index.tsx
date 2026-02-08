@@ -1,87 +1,180 @@
-import CustomerListSkeleton from '@/components/customers/customer-list-skeleton';
-import { useTheme } from '@/newLib/theme';
-import { ThemedText } from '@/newLib/ThemedText';
-import { ThemedTextInput } from '@/newLib/ThemedTextInput';
-import { useCustomers } from '@/services/queries/customers';
-import { SPACING } from '@/theme/spacing';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { router, Stack } from 'expo-router';
-import React, { useState } from 'react';
-import { FlatList, ImageBackground, Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import EmptyState from "@/components/common/empty-state";
+import ErrorState from "@/components/common/error-state";
+import { SearchInput } from "@/components/common/search-input";
+import CustomerListSkeleton from "@/components/customers/customer-list-skeleton";
+import { moderateScale } from "@/newLib/responsive";
+import { useTheme } from "@/newLib/theme";
+import { ThemedText } from "@/newLib/ThemedText";
+import { useCustomers } from "@/services/queries/customers";
+import { SPACING } from "@/theme/spacing";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Image } from "expo-image";
+import { router, Stack } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  FlatList,
+  ImageBackground,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function CustomerList() {
   const { theme } = useTheme();
-  const [search, setSearch] = useState('');
-  const { data: customersData, isLoading } = useCustomers(search);
-  const customers = customersData?.data || [];
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const insets = useSafeAreaInsets();
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const {
+    data: customersData,
+    isLoading,
+    refetch,
+    isRefetching,
+    error,
+  } = useCustomers(debouncedSearch);
+  const customers = customersData?.data?.result || [];
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
   const renderItem = ({ item }: { item: any }) => {
-    console.log(item);
-    
+    if (!item) return null;
+
     return (
-    <Pressable
-      style={styles.card}
-      onPress={() => router.push(`/(main)/customers/${item.customerDetails._id}`)}
-    >
-      <ImageBackground
-        source={{ uri: item.customerDetails.imgUrl || '' }}
-        style={styles.cardImage}
-        imageStyle={{ borderRadius: 12 }}
+      <Pressable
+        style={styles.card}
+        onPress={() =>
+          item?._id && router.push(`/(main)/customers/${item.userId}`)
+        }
       >
-        <View style={styles.overlay} />
-      {item.customerDetails.location&&  <View style={styles.tag}>
-        <MaterialIcons name="location-on" size={14} color="white" />
-          <ThemedText variant="text12M" style={{ color: '#fff' }}>
-            {item.customerDetails.location }
-          </ThemedText>
-        </View>}
-        <View style={styles.cardContent}>
-          {/* <View style={styles.iconContainer}>
-             <View style={styles.redIcon}>
-                <MaterialIcons name="location-on" size={14} color="white" />
-             </View>
-          </View> */}
-          <ThemedText variant="text16B" style={{ color: '#fff' }}>
-            {item.customerDetails.userName}
-          </ThemedText>
-        </View>
-      </ImageBackground>
-    </Pressable>
-  );}
+        <ImageBackground
+          source={{ uri: item?.shop_photo || "" }}
+          style={styles.cardImage}
+          imageStyle={{ borderRadius: 12 }}
+        >
+          <View style={styles.overlay} />
+
+          {/* Al Dhaid tag in top-left */}
+          <View style={styles.locationTag}>
+            <MaterialIcons name="done" size={12} color="white" />
+            <ThemedText variant="text12M" style={{ color: "#fff" }}>
+              {item?.location || ""}
+            </ThemedText>
+          </View>
+
+          {/* Location badge at bottom */}
+          <View style={styles.cardContent}>
+            <Image
+              source={{ uri: item?.logo || "" }}
+              style={styles.locationBadge}
+            />
+            <ThemedText variant="text16B" style={{ color: "#fff" }}>
+              {item?.name || ""}
+            </ThemedText>
+          </View>
+        </ImageBackground>
+      </Pressable>
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={[styles.header, { paddingTop: insets.top, backgroundColor: theme.background }]}>
+      <View
+        style={[
+          styles.header,
+          { paddingTop: insets.top, backgroundColor: theme.background },
+        ]}
+      >
         <View style={styles.headerTop}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
-             <MaterialIcons name="arrow-back" size={24} color={theme.primary} />
+            <MaterialIcons name="arrow-back" size={24} color={theme.primary} />
           </Pressable>
           <ThemedText variant="title">Customers</ThemedText>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.searchContainer}>
-          <ThemedTextInput
+          <SearchInput
+            placeholderTextColor={theme.placeholder}
             placeholder="Search Customers"
-            value={search}
-            onChangeText={setSearch}
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+            containerStyle={{ marginBottom: 0 }}
           />
         </View>
       </View>
 
-      {isLoading ? (
-        <CustomerListSkeleton />
+      {/* Error State */}
+      {error && !isRefetching && !isLoading ? (
+        <ErrorState
+          error={error as Error}
+          errorType={
+            error?.message?.includes("network") ||
+            error?.message?.includes("fetch")
+              ? "network"
+              : "api"
+          }
+          onRetry={refetch}
+        />
+      ) : isLoading ? (
+        <View
+          style={{ padding: SPACING.screenPadding, marginTop: SPACING.gap }}
+        >
+          <CustomerListSkeleton />
+        </View>
       ) : (
         <FlatList
           data={customers}
-          keyExtractor={(item) => item._id}
+          showsVerticalScrollIndicator={false}
+          keyExtractor={(item, index) => `${item?._id || index}`}
           renderItem={renderItem}
-          contentContainerStyle={{ gap: SPACING.gap, padding: SPACING.screenPadding }}
+          contentContainerStyle={{
+            gap: SPACING.gap,
+            padding: SPACING.screenPadding,
+            paddingBottom: SPACING.screenBottom,
+          }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#000"
+            />
+          }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <ThemedText variant="text14M">No customers found</ThemedText>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                marginTop: moderateScale(50),
+              }}
+            >
+              <EmptyState
+                type={searchTerm ? "no-results" : "no-data"}
+                title={
+                  searchTerm ? "No Customers Found" : "No Customers Available"
+                }
+                description={
+                  searchTerm
+                    ? `No customers match "${searchTerm}"`
+                    : "Customers will appear here once they are added"
+                }
+              />
             </View>
           }
         />
@@ -98,16 +191,16 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.gap,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: SPACING.screenPadding,
     marginBottom: SPACING.gap,
   },
@@ -124,53 +217,42 @@ const styles = StyleSheet.create({
   },
   cardImage: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
     padding: SPACING.gap,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 12,
   },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  locationTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 4,
-    position: 'absolute',
+    position: "absolute",
     top: 12,
     left: 12,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
-  iconContainer: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  redIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'red',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  locationBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#EF4444",
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyContainer: {
     padding: SPACING.screenPadding,
-    alignItems: 'center',
+    alignItems: "center",
   },
 });

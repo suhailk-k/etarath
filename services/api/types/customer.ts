@@ -5,25 +5,32 @@ export interface AssignedUsers {
 
 export interface CustomerDetails {
   _id: string;
-  userName: string;
-  email: string;
-  phoneNumber: string;
-  imgUrl: string;
-  role: string;
-  isVerified: string;
-  isSuspend: boolean;
-  isAccount_deleted: boolean;
-  salesAgentOwner: string | null;
+  userId: string;
+  userName?: string; // Optional as API uses 'name' primarily
+  name: string; // Primary name field from API
+  email?: string;
+  phoneNumber?: string;
+  imgUrl?: string;
+  role?: string;
+  isVerified?: string;
+  isSuspend?: boolean;
+  isAccount_deleted?: boolean;
+  salesAgentOwner?: string | null;
   location: string;
-  eidNo: string;
-  eidFile: string;
-  eidExpiryDate: string;
-  active_plan: any;
-  language: any[];
-  salesAgentTarget: number;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
+  shop_photo: string;
+  logo: string;
+  since: string; // Member since date
+  bussines_hours: string; // Note: API has typo "bussines" instead of "business"
+  payment_method: string;
+  eidNo?: string;
+  eidFile?: string;
+  eidExpiryDate?: string;
+  active_plan?: any;
+  language?: any[];
+  salesAgentTarget?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
   kycDetails?: KycDetails; // Added based on Details API response structure
 }
 
@@ -49,27 +56,35 @@ export interface KycDetails {
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
-  [key: string]: any; 
+  [key: string]: any;
 }
 
-// The item in the list response
-export interface Customer {
+// The item in the list response (new API structure)
+export interface CustomerListItem {
   _id: string;
-  salesAgentId: string;
-  assignedUsers: AssignedUsers;
-  customerDetails: CustomerDetails;
-  kycDetails: KycDetails;
-  __v: number;
+  userId: string;
+  name: string;
+  location: string;
+  shop_photo: string;
+  logo: string;
+}
+
+export interface CustomerListData {
+  result: CustomerListItem[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  message: string;
 }
 
 export interface CustomerListResponse {
   status: number;
   message: string;
-  data: Customer[];
+  data: CustomerListData;
 }
 
 export interface SingleCustomerDetails {
-  customerDetails: CustomerDetails; 
+  customerDetails: CustomerDetails;
   orderCounts: number;
   claimCounts: number;
 }

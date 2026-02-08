@@ -1,6 +1,6 @@
 import { ENDPOINTS } from "./endpoints";
 import apiClient from "./index";
-import { ClaimsResponse } from "./types/claim";
+import { ClaimsResponse, UpdateClaimStatusPayload } from "./types/claim";
 
 export const claimApi = {
   getClaims: async ({
@@ -23,7 +23,7 @@ export const claimApi = {
           search: search || null,
           status: status || null,
         },
-      }
+      },
     );
     return response.data;
   },
@@ -47,13 +47,13 @@ export const claimApi = {
           search: search || null,
           status: status || null,
         },
-      }
+      },
     );
     return response.data;
   },
   getClaimDetails: async (id: string) => {
     const response = await apiClient.get<any>(
-      `${ENDPOINTS.SALES_AGENT.CLAIMS}/${id}`
+      `${ENDPOINTS.SALES_AGENT.CLAIMS}/${id}`,
     );
     return response.data.data;
   },
@@ -61,23 +61,23 @@ export const claimApi = {
     const response = await apiClient.post(ENDPOINTS.SALES_AGENT.CLAIMS, data);
     return response.data;
   },
-  updateClaimStatus: async (id: string, data: any) => {
+  updateClaimStatus: async (id: string, data: UpdateClaimStatusPayload) => {
     const response = await apiClient.patch(
       `${ENDPOINTS.SALES_AGENT.CLAIMS}/${id}/update-status`,
-      data
+      data,
     );
     return response.data;
   },
   pickupClaim: async (id: string) => {
     const response = await apiClient.patch(
-      `${ENDPOINTS.SALES_AGENT.CLAIMS}/${id}/self-assign`
+      `${ENDPOINTS.SALES_AGENT.CLAIMS}/${id}/self-assign`,
     );
     return response.data;
   },
   dropClaim: async (id: string) => {
     const response = await apiClient.patch(
-      `${ENDPOINTS.SALES_AGENT.CLAIMS}/${id}/self-drop`
+      `${ENDPOINTS.SALES_AGENT.CLAIMS}/${id}/self-drop`,
     );
     return response.data;
-  }
+  },
 };

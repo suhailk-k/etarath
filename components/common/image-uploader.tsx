@@ -1,9 +1,18 @@
-import { moderateScale } from '@/newLib/responsive';
-import { uploadApi } from '@/services/api/upload';
-import * as ImagePicker from 'expo-image-picker';
-import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Icon from './icon';
+import { moderateScale } from "@/newLib/responsive";
+import { uploadApi } from "@/services/api/upload";
+import * as ImagePicker from "expo-image-picker";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Toast from "react-native-toast-message";
+import Icon from "./icon";
 
 interface ImageUploaderProps {
   label: string;
@@ -12,28 +21,29 @@ interface ImageUploaderProps {
   containerStyle?: any;
 }
 
-const ImageUploader = ({ label, value, onUpload, containerStyle }: ImageUploaderProps) => {
+const ImageUploader = ({
+  label,
+  value,
+  onUpload,
+  containerStyle,
+}: ImageUploaderProps) => {
   const [loading, setLoading] = useState(false);
 
   const handlePress = () => {
-    Alert.alert(
-      "Select Image",
-      "Choose an option",
-      [
-        {
-          text: "Camera",
-          onPress: launchCamera
-        },
-        {
-          text: "Gallery",
-          onPress: pickImage
-        },
-        {
-          text: "Cancel",
-          style: "cancel"
-        }
-      ]
-    )
+    Alert.alert("Select Image", "Choose an option", [
+      {
+        text: "Camera",
+        onPress: launchCamera,
+      },
+      {
+        text: "Gallery",
+        onPress: pickImage,
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+    ]);
   };
 
   const launchCamera = async () => {
@@ -49,7 +59,11 @@ const ImageUploader = ({ label, value, onUpload, containerStyle }: ImageUploader
         uploadImage(result.assets[0].uri);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to take photo");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to take photo",
+      });
     }
   };
 
@@ -66,19 +80,27 @@ const ImageUploader = ({ label, value, onUpload, containerStyle }: ImageUploader
         uploadImage(result.assets[0].uri);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to pick image");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to pick image",
+      });
     }
   };
 
   const uploadImage = async (uri: string) => {
     setLoading(true);
     try {
-        const url = await uploadApi.uploadFile(uri);
-        onUpload(url);
+      const url = await uploadApi.uploadFile(uri);
+      onUpload(url);
     } catch (error) {
-        Alert.alert("Error", "Failed to upload image");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to upload image",
+      });
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -109,32 +131,32 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: moderateScale(14),
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: moderateScale(8),
-    color: '#333',
+    color: "#333",
   },
   touchable: {
     width: moderateScale(100),
     height: moderateScale(100),
     borderRadius: moderateScale(8),
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#F5F5F5',
+    borderColor: "#E0E0E0",
+    backgroundColor: "#F5F5F5",
   },
   image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   placeholder: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     gap: moderateScale(4),
   },
   placeholderText: {
     fontSize: moderateScale(12),
-    color: '#666',
+    color: "#666",
   },
 });
